@@ -5,7 +5,6 @@ import Item from '../components/item';
 import ItemCount from '../components/item-count';
 import ItemList from '../components/item-list';
 
-
 const Home: NextPage = () => {
   let item2 = <Item message="a new message" />;
   let item3 = <Item message="another message" />;
