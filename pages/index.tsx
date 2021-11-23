@@ -1,35 +1,94 @@
+import { Button, Divider, Form, Input, List } from 'antd';
 import type { NextPage } from 'next';
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import AppFooter from '../components/app-footer';
 import AppJumbotron from '../components/app-jumbotron';
-import Item from '../components/item';
 import ItemCount from '../components/item-count';
-import ItemList from '../components/item-list';
 
-declare const window: any;
+const Home: NextPage = ({ drizzle, drizzleState }) => {
+  let [dataKey, setDataKey] = useState(null);
+  const contract = drizzle.contracts.CheckList;
 
-const CONTRACT_ADDRESS = "0xB3A128fBDDF0Ba3197fe4eBB71bD9cEd3A0f79FE";
+  let tasks = [];
 
-const Home: NextPage = () => {
-  let [user, setUser] = useState('');
-  // let [tasks, setTasks] = useState([]);
+  useEffect(() => {
+    const itemsDataKey = contract.methods['getTasks'].cacheCall();
+    setDataKey(itemsDataKey);
+  }, [contract]);
 
-  let item2 = <Item key={0} message="a new message" />;
-  let item3 = <Item key={1} message="another message" />;
-  let item4 = <Item key={2} message="one more task" />;
+  const { CheckList } = drizzleState.contracts;
+  const itemsData = CheckList.getTasks[dataKey];
 
-  const tasks = [item2, item3, item4];
+  if (itemsData && itemsData.value) {
+    tasks = itemsData.value.map(function (item, idx) {
+      return { title: item.title, isDone: item.isDone, key: idx }
+    });
+  }
+
+  const [form] = Form.useForm();
+
+  const createTask = () => {
+    const title = form.getFieldValue('title');
+    if (!title || title.trim() === '') {
+      form.setFieldsValue({ title: '' });
+      return;
+    }
+
+    contract.methods['createTask'].cacheSend(title, { from: drizzleState.accounts[0], gas: 3000000 });
+
+    form.setFieldsValue({ title: '' });
+  }
+
+  console.log({ tasks })
+
+  const doneTask = (event) => {
+    const idx = event.target.getAttribute('data');
+
+    contract.methods['finishTask'].cacheSend(idx, { from: drizzleState.accounts[0], gas: 3000000 });
+  }
 
   return (
     <div className="container">
-      <AppJumbotron title={`Hello, ${user}`} />
-        <ItemList allTheThings={tasks} />
+        <AppJumbotron title={drizzleState.accounts[0]} />
+        <Divider orientation="left">Your tasks:</Divider>
+        <List
+          size="large"
+          bordered
+          dataSource={tasks}
+          renderItem={({ title, isDone, key }) => <List.Item actions={[<a key={`done-${key}`} data={key} onClick={doneTask}>done</a>]}>{!isDone ? title : <strike>{title}</strike>}</List.Item>}
+        />
+
+        <br />
+        <br />
+        <br />
+
+        <Form
+          name="basic"
+          form={form}
+          labelCol={{ span: 8 }}
+          wrapperCol={{ span: 16 }}
+          initialValues={{ remember: true }}
+          autoComplete="off"
+        >
+            <Form.Item
+              label="Title"
+              name="title"
+            >
+              <Input />
+            </Form.Item>
+
+            <Form.Item wrapperCol={{ offset: 8, span: 16 }}>
+              <Button type="primary" htmlType="submit" onClick={createTask}>
+                Submit
+              </Button>
+            </Form.Item>
+        </Form>
         <br />
         <br />
         <br />
         <ItemCount allTheThings={tasks} />
         <hr />
-      <AppFooter />
+        <AppFooter />
     </div>
   )
 }
