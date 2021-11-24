@@ -21,7 +21,7 @@ const Home: NextPage = ({ drizzle, drizzleState }) => {
 
   if (itemsData && itemsData.value) {
     tasks = itemsData.value.map(function (item, idx) {
-      return { title: item.title, isDone: item.isDone, key: idx }
+      return { title: item.title, isDone: item.isDone, key: idx };
     });
   }
 
@@ -38,8 +38,6 @@ const Home: NextPage = ({ drizzle, drizzleState }) => {
 
     form.setFieldsValue({ title: '' });
   }
-
-  console.log({ tasks })
 
   const doneTask = (event) => {
     const idx = event.target.getAttribute('data');
